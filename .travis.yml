@@ -1,0 +1,24 @@
+sudo: required
+language: generic
+
+services:
+  - docker
+
+before_install:
+  - docker build -t peltor/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true peltor/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t peltor/multi-client ./client
+  - docker build -t peltor/multi-nginx ./nginx
+  - docker build -t peltor/multi-server ./server
+  - docker build -t peltor/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push peltor/multi-client
+  - docker push peltor/multi-nginx
+  - docker push peltor/multi-server
+  - docker push peltor/multi-worker
